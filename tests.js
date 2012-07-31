@@ -39,18 +39,18 @@ test( 'Value in text field should save state', function () {
   var $form = setup();
   $form.find( '#first_name' ).val( 'Shane' );
   triggerUnload();
-  ok( /Shane/.test( getObject(o.objName).first_name.value ), 'First name saved' );
+  ok( /Shane/.test( ls.getItem( o.objName ), 'First name saved' );
   $form.find( '#last_name' ).val( 'Riley' );
-  ok( ! /Riley/.test( getObject(o.objName).last_name.value ), 'Last name not saved');
+  ok( ! /Riley/.test( ls.getItem( o.objName ), 'Last name not saved');
 } );
 
 test( 'Value in radio should save state', function () {
   var $form = setup();
   $form.find( '#gender_male' ).prop( 'checked', true );
   triggerUnload();
-  ok( /Male/.test( getObject( o.objName ).gender.value ), 'Gender saved' );
+  ok( /Male/.test( ls.getItem( o.objName ) ), 'Gender saved' );
   $form.find('#gender_female').prop('checked', true );
-  ok( ! /Female/.test( getObject( o.objName ).gender.value ), 'Gender not saved' );
+  ok( ! /Female/.test( ls.getItem( o.objName ) ), 'Gender not saved' );
 } );
 
 test( 'Value in select box should save state', function () {
