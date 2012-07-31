@@ -7,7 +7,7 @@ var o             = {
   , triggerUnload = function () {
     $( window ).trigger( 'unload' );
   }
-  , ls            = w.localStorage
+  , ls            = window.localStorage
   , getObject     = function ( key ) {
     var value = ls.getItem( key );
     return value && JSON.parse( value );
