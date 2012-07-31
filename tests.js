@@ -11,12 +11,12 @@ var o             = {
 test( 'Requirements', 3, function () {
   ok( $, '$' );
   ok( $.fn.rememberState, '$.fn.rememberState' );
-  ok( localStorage && (typeof localStorage.setItem === 'function'), 'localStorage supported' );
+  ok( window.localStorage && typeof localStorage.setItem === 'function', 'localStorage supported' );
 } );
 
 module( 'rememberState', {
   setup: function() {
-    delete removeObject( o.objName );
+    localStorage.removeItem( o.objName );
   }
 } );
 
