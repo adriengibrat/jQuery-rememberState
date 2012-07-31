@@ -1,102 +1,116 @@
-(function($) {
-    if ( ! window.localStorage || ! window.JSON )
-      return $.fn.rememberState = function () { return this; }
-  var getObject  = function(key) {
-    var value = localStorage.getItem( key );
-      return value && JSON.parse( value );
-  }
-  , setObject    = function( key, value ) {
-      value && localStorage.setItem( key, JSON.stringify( value ) );
-  }
-  , removeObject = function( key ) {
-      localStorage.removeItem( key );
-  };
-  $.fn.rememberState = function( defaults ) {
-    var opts = $.extend({
-          clearOnSubmit: true,
-          inputSelector: ':input',
-          noticeDialog: (function() {
-            var $e = $("<p />", {id: "remember_state"})
-                     .html('Do you want to <a href="#">restore your previously entered info</a>?');
-            return $e;
-          })(),
-          objName: false }, defaults);
-    var use_ids = !(!!opts.objName);
-    if (!("prop" in $.fn)) { $.fn.prop = $.fn.attr; }
-    if (opts.noticeDialog.length && typeof opts.noticeDialog === "object") {
-      opts.noticeDialog.find("a").bind("click.remember_state", function(e) {
-        var data = getObject(opts.objName),
-            $f = $(this).closest("form"),
-            $e;
-        for (var i in data) {
-          $e = $f.find(":input[name=\"" + data[i].name + "\"]");
-          if ($e.is(":radio, :checkbox")) {
-            $e.filter("[value=" + data[i].value + "]").prop("checked", true);
-          }
-          else if ($e.is("select")) {
-            $e.find("[value=" + data[i].value + "]").prop("selected", true);
-          }
-          else {
-            $e.val(data[i].value);
-          }
-          $.uniform && $.uniform.update && $.uniform.update( $e );
-          $e.change();
-        }
-        opts.noticeDialog.remove();
-        e.preventDefault();
-      });
-    }
-    if (this.length > 1) {
-      if (console.log) {
-        console.log("WARNING: Cannot process more than one form with the same" +
-          " object. Attempting to use form IDs instead.");
-      }
-      use_ids = true;
-    }
-    return this.each(function() {
-      var $form = $(this);
-      if (use_ids) {
-        if ($form.attr("id")) {
-          opts.objName = $form.attr("id");
-        }
-        else {
-          if (console.log) {
-            console.log("ERROR: No form ID or object name. Add an ID or pass" +
-              " in an object name");
-            return this;
-          }
-        }
-      }
-      if (getObject(opts.objName)) {
-        (opts.noticeDialog.length && typeof opts.noticeDialog === "object") ?
-          opts.noticeDialog.prependTo($form) :
-          opts.noticeDialog.show();
-      }
-      $form.bind("reset_state", function() {
-        removeObject(opts.objName);
-      });
-      if (opts.clearOnSubmit) {
-        $form.bind("submit.remember_state", function() {
-          $(window).unbind( 'unload.remember_state' );
-          $(this).trigger("reset_state");
-        });
-      }
-      $(window).bind("unload.remember_state", function() {
-        var values = $form.find(opts.inputSelector).serializeArray();
-        // jQuery doesn't currently support datetime-local inputs despite a
-        // comment by dmethvin stating the contrary:
-        // http://bugs.jquery.com/ticket/5667
-        // Manually storing input type until jQuery is patched
-        $form.find(opts.inputSelector + "[type='datetime-local']").each(function() {
-          var $i = $(this);
-          values.push({ name: $i.attr("name"), value: $i.val() });
-        });
-        if ( values.length )
-          setObject(opts.objName, values);
-      });
-      $form.find(":reset").bind("click.remember_state", function() {
-        $(this).closest("form").trigger("reset_state");
-      });
-    });
-  };
-})(jQuery);
+( function ( $, w ) {
+	// Minification & plugin renaming
+	var namespace = 'rememberState';
+	// Bogus function if not supported
+	if ( ! w.localStorage || ! w.JSON )
+		return $.fn[ namespace ] = function () {
+			return this;
+		};
+	// localStorage helpers
+	var ls = w.localStorage
+	, getObject    = function ( key ) {
+		var value = ls.getItem( key );
+		return value && JSON.parse( value );
+	}
+	, setObject    = function ( key, value ) {
+		value && ls.setItem( key, JSON.stringify( value ) );
+	}
+	, removeObject = function ( key ) {
+		ls.removeItem( key );
+	};
+	// Fix for old jQuery
+	if ( ! 'prop' in $.fn )
+		$.fn.prop = $.fn.attr;
+	// Port of Java hashCode simple hash algorithm
+	$.hashCode = function ( string ) {
+		var hash = 0;
+		if ( ! string.length )
+			return hash;
+		for ( var length = string.length, index = 0; index < length; index++ ) {
+			hash = ( ( hash << 5 ) - hash ) + string.charCodeAt( index );
+			hash = hash & hash; // Convert to 32bit integer
+		}
+		return hash;
+	};
+	// Remember state plugin
+	$.fn[ namespace ] = function( settings ) {
+		// Set options
+		var options  = $.extend( {
+					clearOnSubmit   : true
+					, inputSelector : ':input'
+					, noticeDialog  : ( function () {
+						return $( '<p/>', { className: namespace } ).html( 'Do you want to <a href="#">restore your previously entered info</a>?' );
+					} )()
+					, storageName   : false
+				}, $.type( settings ) == 'string' ? { storageName : settings } : settings )
+			, autoName = this.length > 1 ? true : ! options.storageName
+			, self     = this;
+		// Prepare notice dialog
+		if ( options.noticeDialog instanceof $ )
+			options.noticeDialog
+				.find( 'a' )
+				.bind( 'click.' + namespace, function ( event ) {
+					$( this ).closest( 'form' ).trigger( 'restore_state' );
+					options.noticeDialog.remove();
+					event.preventDefault();
+				} );
+		// Iterate selection
+		return self.each( function () {
+			var $form = $( this );
+			// Only forms
+			if ( ! $form.is( 'form' ) )
+				return;
+			// Fix storage name
+			if ( autoName )
+				options.storageName = $form.attr( 'id' ) || $.hashCode( [ $form.attr( 'action' ), self.index( this ) ].join( '|' ) );
+			// Show notice
+			if ( getObject( options.storageName ) && options.noticeDialog instanceof $ )
+				options.noticeDialog.closest( 'body' ).length ?
+					options.noticeDialog.show() :
+					options.noticeDialog.prependTo( $form );
+			// Set form methods
+			$form
+				.bind( 'save_state.' + namespace, function ( event, values ) {
+					if ( ! values ) {
+						var $inputs = $form.find( options.inputSelector )
+							, values  = $inputs.serializeArray();
+						// jQuery doesn't currently support datetime-local inputs despite a comment by dmethvin stating the contrary:
+						// http://bugs.jquery.com/ticket/5667
+						// Manually storing input type until jQuery is patched
+						$inputs.filter( '[type="datetime-local"]' ).each( function () {
+							var $input = $( this );
+							values.push( { name: $input.attr( 'name' ), value: $input.val() } );
+						} );
+					}
+					values.length && setObject( options.storageName, values );
+				} )
+				.bind( 'restore_state.' + namespace, function () {
+					$.each( getObject( options.storageName ), function () {
+						var $element = $form.find( ':input[name="' + this.name + '"]' );
+						if ( $element.is( ':radio, :checkbox' ) )
+							$element.filter( '[value="' + this.value + '"]' ).prop( 'checked', true );
+						else if ( $element.is( 'select' ) )
+							$element.find( '[value="' + this.value + '"]' ).prop( 'selected', true );
+						else
+							$element.val( this.value );
+						$element.change();
+					} );
+				} )
+				.bind( 'reset_state.' + namespace, function () {
+					removeObject( options.storageName );
+				} )
+				.bind( 'submit.' + namespace, options.clearOnSubmit ? function () {
+					$( w ).unbind( 'unload.' + namespace );
+					$form.trigger( 'reset_state.' + namespace );
+				} : null );
+			// Save form method
+			$ ( w ).bind( 'unload.' + namespace, function () {
+				$form.trigger( 'save_state.' + namespace );
+			} );
+			// Reset form buttons
+			$form.find( ':reset' ).bind( 'click.' + namespace, function () {
+				$form.trigger( 'reset_state.' + namespace );
+			} );
+		} );
+	};
+} )( jQuery, window );
