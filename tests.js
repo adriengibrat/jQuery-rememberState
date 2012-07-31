@@ -39,9 +39,9 @@ test( 'Value in text field should save state', function () {
   var $form = setup();
   $form.find( '#first_name' ).val( 'Shane' );
   triggerUnload();
-  ok( /Shane/.test( ls.getItem( o.objName ), 'First name saved' );
+  ok( /Shane/.test( ls.getItem( o.objName ) ), 'First name saved' );
   $form.find( '#last_name' ).val( 'Riley' );
-  ok( ! /Riley/.test( ls.getItem( o.objName ), 'Last name not saved');
+  ok( ! /Riley/.test( ls.getItem( o.objName ) ), 'Last name not saved');
 } );
 
 test( 'Value in radio should save state', function () {
