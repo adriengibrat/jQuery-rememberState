@@ -10,7 +10,7 @@
 
       var range = $( 'input[type="range"]' ).change( function () {
         var self = $( this );
-        self.closest('dd' ).find( 'span' ).text( self.val() );
+        self.closest( 'dd' ).find( 'span' ).text( self.val() );
       } ).change();
 
       $( 'form' )
