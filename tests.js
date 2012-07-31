@@ -16,12 +16,12 @@ test( 'Requirements', 3, function () {
 
 module( 'rememberState', {
   setup: function() {
-    localStorage.removeItem( o.objName );
+    localStorage.removeItem( storageId );
   }
 } );
 
 test( 'It should have no data in localStorage', function () {
-  ok( !  );
+  ok( ! localStorage.getItem( storageId ) );
 } );
 
 test( 'Value in text field should save state', function () {
