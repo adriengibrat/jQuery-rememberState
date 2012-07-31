@@ -1,11 +1,12 @@
-var o             = {
-    storageName: 'remember_state_test_data'
-  }
+var storageId     = 'remember_state_test_data'
   , triggerUnload = function () {
     $( window ).trigger( 'unload' );
+  }
+  , testData      = function ( regExp ) {
+    return regExp.test( localStorage.getItem( storageId ) );
   };
 
-$( '#qunit-fixture form' ).rememberState( o );
+$( '#qunit-fixture form' ).rememberState( storageId );
 
 test( 'Requirements', 3, function () {
   ok( $, '$' );
@@ -20,43 +21,43 @@ module( 'rememberState', {
 } );
 
 test( 'It should have no data in localStorage', function () {
-  ok( ! localStorage.getItem( o.objName ) );
+  ok( !  );
 } );
 
 test( 'Value in text field should save state', function () {
   var $form = $( '#qunit-fixture form' );
   $form.find( '#first_name' ).val( 'Shane' );
   triggerUnload();
-  ok( /Shane/.test( localStorage.getItem( o.objName ) ), 'First name saved' );
+  ok( testData( /Shane/ ), 'First name saved' );
   $form.find( '#last_name' ).val( 'Riley' );
-  ok( ! /Riley/.test( localStorage.getItem( o.objName ) ), 'Last name not saved');
+  ok( ! testData( /Riley/ ), 'Last name not saved');
 } );
 
 test( 'Value in radio should save state', function () {
   var $form = $( '#qunit-fixture form' );
   $form.find( '#gender_male' ).prop( 'checked', true );
-  triggerUnload();
-  ok( /Male/.test( localStorage.getItem( o.objName ) ), 'Gender saved' );
+  var data = triggerUnload();
+  ok( testData( /Male/ ), 'Gender saved' );
   $form.find('#gender_female').prop('checked', true );
-  ok( ! /Female/.test( localStorage.getItem( o.objName ) ), 'Gender not saved' );
+  ok( ! testData( /Female/ ), 'Gender not saved' );
 } );
 
 test( 'Value in select box should save state', function () {
   var $form = $( '#qunit-fixture form' );
   $form.find( '#marital_status option:contains(Married)' ).prop( 'selected', true );
   triggerUnload();
-  ok( /Married/.test( localStorage.getItem( o.objName ) ), 'Marital status saved');
+  ok( testData( /Married/ ), 'Marital status saved');
   $form.find( '#marital_status option:contains(Single)' ).prop( 'selected', true );
-  ok( ! /Single/.test( localStorage.getItem( o.objName ) ), 'Marital status not saved');
+  ok( ! testData( /Single/ ), 'Marital status not saved');
 } );
 
 test( 'Value in checkbox should save state', function () {
   var $form = $( '#qunit-fixture form' );
   $form.find( '[name=video_games]' ).prop( 'checked', true );
   triggerUnload();
-  ok( /Video/.test( localStorage.getItem( o.objName ) ), 'Video games saved' );
+  ok( testData( /Video/ ), 'Video games saved' );
   $form.find( '[name=dendrophilia]' ).prop( 'checked', true );
-  ok( ! /Dendro/.test( localStorage.getItem( o.objName ) ), 'Dendrophilia not saved' );
+  ok( ! testData( /Dendro/ ), 'Dendrophilia not saved' );
 } );
 
 test( 'Multiselects restore state', function () {
@@ -65,20 +66,20 @@ test( 'Multiselects restore state', function () {
   $opts.eq( 0 ).prop( 'selected', true );
   $opts.eq( $opts.length - 1 ).prop( 'selected', true );
   triggerUnload();
-  ok( /m_w/.test( localStorage.getItem( o.objName ) ), 'Multiple selected options saved' );
-  ok( ! /m_m/.test( localStorage.getItem( o.objName ) ), 'Not selected option not saved' );
+  ok( testData( /m_w/ ), 'Multiple selected options saved' );
+  ok( ! testData( /m_m/ ), 'Not selected option not saved' );
 } );
 
 test( 'Value in datetime should save state', function () {
   var $form = $( '#qunit-fixture form' );
   $form.find( '#datetime' ).val( '1901-01-01T06:00:00' );
   triggerUnload();
-  ok( /1901-01-01T06:00:00/.test( localStorage.getItem( o.objName ) ), 'Datetime saved' );
+  ok( testData( /1901-01-01T06:00:00/ ), 'Datetime saved' );
 } );
 
 test( 'Value in datetime-local should save state', function () {
   var $form = $( '#qunit-fixture form' );
   $form.find( '#datetime-local' ).val( '1901-01-01T06:00:00-06:00' );
   triggerUnload();
-  ok( /1901-01-01T06:00:00-06:00/.test( localStorage.getItem( o.objName ) ), 'Datetime-local saved' );
+  ok( testData( /1901-01-01T06:00:00-06:00/ ), 'Datetime-local saved' );
 } );
