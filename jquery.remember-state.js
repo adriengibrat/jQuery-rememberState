@@ -3,20 +3,34 @@
 	var namespace   = 'rememberState'
 		, ls        = w.localStorage;
 	// Fix for old jQuery
-	if ( ! 'prop' in $.fn )
+	if ( ! $.fn.prop )
 		$.fn.prop = $.fn.attr;
 	// Port of Java hashCode simple hash algorithm
 	$.hashCode = function ( string ) {
-		var hash = 0;
-		if ( ! string.length )
+		var hash = 0, length = string.length;
+		if ( ! length )
 			return hash;
-		for ( var length = string.length, index = 0; index < length; index++ ) {
+		for ( var index = 0; index < length; index++ ) {
 			hash = ( ( hash << 5 ) - hash ) + string.charCodeAt( index );
 			hash = hash & hash; // Convert to 32bit integer
 		}
 		return hash;
 	};
-	// Bogus function if not supported
+	// Filter helpers to save specific inputs
+	var filters = $.expr[ ':' ];
+	$.extend( filters, {
+		// selector of elements having a value (test it against given value when regexp is given between parenthesis i.e. ":val(regexp)")
+		val        : function ( elem, i, attr ) {
+			return ( attr && attr[ 3 ] ) ? new RegExp( attr[ 3 ] ).test( elem.value ) : !! elem.value;
+		}
+		// selector of elements having a answer (value for text input & textarea, checked for radio & checkbox, selected for select)
+		, answered : function ( elem ) {
+			if ( filters.text( elem ) || ( elem.nodeName.toLowerCase() === 'textarea' ) )
+				return filters.val( elem );
+			return filters.checked( elem ) || filters.selected( elem );
+		}
+	} );
+	// Bogus function if localStorage or JSON not supported
 	if ( ! ls || ! w.JSON )
 		return $.fn[ namespace ] = function () {
 			return this;
