@@ -1,23 +1,7 @@
 ( function ( $, w ) {
 	// Minification & plugin renaming
-	var namespace = 'rememberState';
-	// Bogus function if not supported
-	if ( ! w.localStorage || ! w.JSON )
-		return $.fn[ namespace ] = function () {
-			return this;
-		};
-	// localStorage helpers
-	var ls = w.localStorage
-	, getObject    = function ( key ) {
-		var value = ls.getItem( key );
-		return value && JSON.parse( value );
-	}
-	, setObject    = function ( key, value ) {
-		value && ls.setItem( key, JSON.stringify( value ) );
-	}
-	, removeObject = function ( key ) {
-		ls.removeItem( key );
-	};
+	var namespace   = 'rememberState'
+		, ls        = w.localStorage;
 	// Fix for old jQuery
 	if ( ! 'prop' in $.fn )
 		$.fn.prop = $.fn.attr;
@@ -32,6 +16,11 @@
 		}
 		return hash;
 	};
+	// Bogus function if not supported
+	if ( ! ls || ! w.JSON )
+		return $.fn[ namespace ] = function () {
+			return this;
+		};
 	// Remember state plugin
 	$.fn[ namespace ] = function( settings ) {
 		// Set options
@@ -64,7 +53,7 @@
 			if ( autoName )
 				options.storageName = $form.attr( 'id' ) || $.hashCode( [ $form.attr( 'action' ), self.index( this ) ].join( '|' ) );
 			// Show notice
-			if ( getObject( options.storageName ) && options.noticeDialog instanceof $ )
+			if ( ls.getItem( options.storageName ) && options.noticeDialog instanceof $ )
 				options.noticeDialog.closest( 'body' ).length ?
 					options.noticeDialog.show() :
 					options.noticeDialog.prependTo( $form );
@@ -72,8 +61,8 @@
 			$form
 				.bind( 'save_state.' + namespace, function ( event, values ) {
 					if ( ! values ) {
-						var $inputs = $form.find( options.inputSelector )
-							, values  = $inputs.serializeArray();
+						var $inputs  = $form.find( options.inputSelector )
+							, values = $inputs.serializeArray();
 						// jQuery doesn't currently support datetime-local inputs despite a comment by dmethvin stating the contrary:
 						// http://bugs.jquery.com/ticket/5667
 						// Manually storing input type until jQuery is patched
@@ -82,22 +71,30 @@
 							values.push( { name: $input.attr( 'name' ), value: $input.val() } );
 						} );
 					}
-					values.length && setObject( options.storageName, values );
+					values.length && ls.setItem( options.storageName, JSON.stringify( values ) );
 				} )
 				.bind( 'restore_state.' + namespace, function () {
-					$.each( getObject( options.storageName ), function () {
-						var $element = $form.find( ':input[name="' + this.name + '"]' );
-						if ( $element.is( ':radio, :checkbox' ) )
-							$element.filter( '[value="' + this.value + '"]' ).prop( 'checked', true );
-						else if ( $element.is( 'select' ) )
-							$element.find( '[value="' + this.value + '"]' ).prop( 'selected', true );
-						else
-							$element.val( this.value );
-						$element.change();
-					} );
+					var data = ls.getItem( options.storageName );
+					if ( data )
+						$.each( JSON.parse( data ), function () {
+							var $element = $form.find( ':input[name="' + this.name + '"]' );
+							if ( $element.is( ':radio, :checkbox' ) )
+								$element.filter( '[value="' + this.value + '"]' ).prop( 'checked', true );
+							else if ( $element.is( 'select' ) )
+								$element.find( '[value="' + this.value + '"]' ).prop( 'selected', true );
+							else
+								$element.val( this.value );
+							$element.change();
+						} );
 				} )
 				.bind( 'reset_state.' + namespace, function () {
-					removeObject( options.storageName );
+					ls.removeItem( options.storageName );
+				} )
+				.bind( 'remove_state.' + namespace, function () {
+					$form.trigger( 'reset_state.' + namespace )
+						.add( $form.find( ':reset' ) )
+						.add( w )
+						.unbind( '.' + namespace );
 				} )
 				.bind( 'submit.' + namespace, options.clearOnSubmit ? function () {
 					$( w ).unbind( 'unload.' + namespace );
